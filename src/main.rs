@@ -41,17 +41,13 @@ use shared_game::state::state::GameStateInterface;
 
 static mut CLIENT: Option<Mutex<*mut Client>> = None;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 struct RenderParams {
     skin_name: String,
-}
-
-impl Default for RenderParams {
-    fn default() -> Self {
-        Self {
-            skin_name: Default::default(),
-        }
-    }
+    zoom: Option<f32>,
+    x: Option<f32>,
+    y: Option<f32>,
+    map_name: Option<String>,
 }
 
 struct ClientLoad {
@@ -72,6 +68,8 @@ struct Client {
     thread_pool: Arc<rayon::ThreadPool>,
     sys: System,
     client_map: ClientMap,
+    client_map_pkm: ClientMap,
+    skin_names: Vec<String>,
     did_tick: bool,
 }
 
@@ -98,7 +96,48 @@ impl Client {
     }
 
     pub fn render(&mut self, params: RenderParams) -> Vec<u8> {
-        let map = self.client_map.continue_loading(
+        let mut skin_name = params.skin_name;
+
+        let map_name = params.map_name.unwrap_or("ctf1".to_string());
+        let is_ctf1 = map_name == "ctf1";
+
+        let default_x = if is_ctf1 { 173.12 } else { 1358.08 };
+        let default_y = if is_ctf1 { 688.96 } else { 24240.96 };
+
+        if self
+            .skin_names
+            .iter()
+            .find(|str| (*str).eq(&skin_name))
+            .is_none()
+        {
+            skin_name = "default".to_string();
+        }
+
+        let mut zoom = params.zoom.unwrap_or(0.5);
+        let mut x = params.x.unwrap_or(default_x);
+        let mut y = params.y.unwrap_or(default_y);
+
+        if zoom.is_nan() || zoom.is_infinite() {
+            zoom = 1.0;
+        }
+        zoom = zoom.clamp(0.001, 20.0);
+
+        if x.is_nan() || x.is_infinite() {
+            x = 0.0;
+        }
+        x = x.clamp(0.0, 300000.0);
+
+        if y.is_nan() || y.is_infinite() {
+            y = 0.0;
+        }
+        y = y.clamp(0.0, 300000.0);
+
+        let map = if is_ctf1 {
+            &mut self.client_map
+        } else {
+            &mut self.client_map_pkm
+        }
+        .continue_loading(
             &self.io_batcher,
             &self.fs,
             &mut self.graphics,
@@ -106,7 +145,12 @@ impl Client {
             &self.sys,
         );
         if let Some(_) = map {
-            let (map, game) = self.client_map.unwrap_data_and_game_mut();
+            let (map, game) = if is_ctf1 {
+                &mut self.client_map
+            } else {
+                &mut self.client_map_pkm
+            }
+            .unwrap_data_and_game_mut();
 
             if !self.did_tick {
                 game.tick();
@@ -123,8 +167,8 @@ impl Client {
                     intra_tick_time: &Duration::ZERO,
                     game: game,
                     camera: &Camera {
-                        pos: vec2::new(173.12, 688.96),
-                        zoom: 0.5,
+                        pos: vec2::new(x, y),
+                        zoom: zoom,
                         animation_start_tick: 0,
                     },
                     entities_container: &mut self.entities_container,
@@ -137,12 +181,12 @@ impl Client {
             });
 
             let mut state = State::new();
-            Self::map_canvas_for_players(&self.graphics, &mut state, 0.0, 0.0, 0.5);
+            Self::map_canvas_for_players(&self.graphics, &mut state, 0.0, 0.0, zoom);
             let mut anim_state = AnimState::default();
             anim_state.set(&base_anim(), &Duration::from_millis(0));
             anim_state.add(&idle_anim(), &Duration::from_millis(0), 1.0);
             let skin = self.skin_container.get_or_default(
-                &params.skin_name,
+                &skin_name,
                 &mut self.graphics,
                 &self.fs,
                 &self.io_batcher,
@@ -195,8 +239,8 @@ impl Client {
                     intra_tick_time: &Duration::ZERO,
                     game: game,
                     camera: &Camera {
-                        pos: vec2::new(173.12, 688.96),
-                        zoom: 0.5,
+                        pos: vec2::new(x, y),
+                        zoom: zoom,
                         animation_start_tick: 0,
                     },
                     entities_container: &mut self.entities_container,
@@ -299,6 +343,16 @@ impl Client {
             &loading.sys.time,
         ));
 
+        let client_map_pkm = ClientMap::UploadingImagesAndMapBuffer(ClientMapFile::new(
+            &thread_pool,
+            "pkm",
+            &loading.io_batcher,
+            &mut graphics,
+            &loading.fs,
+            &Config::default(),
+            &loading.sys.time,
+        ));
+
         println!("finished setup");
 
         Self {
@@ -311,7 +365,9 @@ impl Client {
             io_batcher: loading.io_batcher,
             thread_pool,
             client_map,
+            client_map_pkm,
             sys: loading.sys,
+            skin_names,
             did_tick: false,
         }
     }
@@ -338,8 +394,8 @@ fn main() {
 
     // tokio runtime for client side tasks
     let rt = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2) // should be at least 2
-        .max_blocking_threads(2) // must be at least 2
+        .worker_threads(4) // should be at least 2
+        .max_blocking_threads(4) // must be at least 2
         .build()
         .unwrap();
 
@@ -367,13 +423,11 @@ async fn asnyc_main() {
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
-        .route("/", get(root))
-        // `POST /users` goes to `create_user`
-        .route("/user", post(create_user));
+        .route("/", get(root));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3002));
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -413,33 +467,4 @@ async fn root(params: Option<Query<RenderParams>>) -> impl IntoResponse {
         )
         .into_response()
     }
-}
-
-async fn create_user(
-    // this argument tells axum to parse the request body
-    // as JSON into a `CreateUser` type
-    Json(payload): Json<CreateUser>,
-) -> impl IntoResponse {
-    // insert your application logic here
-    let user = User {
-        id: 1337,
-        username: payload.username,
-    };
-
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(user))
-}
-
-// the input to our `create_user` handler
-#[derive(Deserialize)]
-struct CreateUser {
-    username: String,
-}
-
-// the output to our `create_user` handler
-#[derive(Serialize)]
-struct User {
-    id: u64,
-    username: String,
 }
