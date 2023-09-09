@@ -1,10 +1,5 @@
 use axum::{
-    body::StreamBody,
-    extract::Query,
-    http::{header, StatusCode},
-    response::IntoResponse,
-    routing::{get, post},
-    Json, Router,
+    body::StreamBody, extract::Query, http::header, response::IntoResponse, routing::get, Router,
 };
 use base::system::System;
 use base_fs::{filesys::FileSystem, io_batcher::TokIOBatcher};
@@ -32,11 +27,8 @@ use graphics_backend::{
 use graphics_base_traits::traits::GraphicsSizeQuery;
 use graphics_types::rendering::{ColorRGBA, State};
 use math::math::{normalize, vector::vec2};
-use palette::{
-    convert::{FromColorUnclamped, IntoColorUnclamped},
-    IntoColor,
-};
-use serde::{Deserialize, Serialize};
+use palette::convert::FromColorUnclamped;
+use serde::Deserialize;
 use std::{io::Cursor, net::SocketAddr, num::NonZeroUsize, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 use tokio_util::io::ReaderStream;
@@ -56,6 +48,7 @@ struct RenderParams {
     feet: Option<i32>,
     dir_x: Option<f32>,
     dir_y: Option<f32>,
+    eyes: Option<String>,
 }
 
 struct ClientLoad {
@@ -162,6 +155,21 @@ impl Client {
         }
 
         let dir = normalize(&vec2::new(dir_x, dir_y));
+
+        let tee_eyes = match params
+            .eyes
+            .unwrap_or("normal".to_string())
+            .to_lowercase()
+            .as_str()
+        {
+            "normal" => TeeSkinEye::Normal,
+            "angry" => TeeSkinEye::Angry,
+            "pain" => TeeSkinEye::Pain,
+            "happy" => TeeSkinEye::Happy,
+            "dead" => TeeSkinEye::Dead,
+            "surprised" => TeeSkinEye::Surprised,
+            _ => TeeSkinEye::Normal,
+        };
 
         let map = if is_ctf1 {
             &mut self.client_map
@@ -292,7 +300,7 @@ impl Client {
                 &mut self.graphics,
                 &anim_state,
                 &tee_render_info,
-                TeeSkinEye::Normal,
+                tee_eyes,
                 &TeeRenderHands {
                     left: None,
                     right: None,
@@ -501,7 +509,7 @@ async fn asnyc_main() {
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3002));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3002));
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
