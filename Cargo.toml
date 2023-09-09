@@ -1,0 +1,27 @@
+[package]
+name = "tee-tee-http"
+version = "0.1.0"
+edition = "2021"
+
+[net]
+git-fetch-with-cli = true
+
+[dependencies]
+shared-game = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+client-render = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+native = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+graphics = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+graphics-base-traits = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+graphics-backend = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+graphics-types = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+base = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+base-fs = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+config = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+math = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+axum = { version = "0.6.20", features = ["headers"] }
+serde = "1.0.188"
+tracing = "0.1.37"
+tokio = { version = "1.32.0", features = ["rt-multi-thread", "sync", "fs", "time", "macros"] }
+winit = { git = "https://github.com/Jupeyy/winit/", branch = "pr_ord_keycode" }
+rayon = "1.7.0"
+tokio-util = { version = "0.7.8", features = ["io"] }
