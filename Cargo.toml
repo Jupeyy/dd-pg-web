@@ -25,3 +25,4 @@ tokio = { version = "1.32.0", features = ["rt-multi-thread", "sync", "fs", "time
 winit = { git = "https://github.com/Jupeyy/winit/", branch = "pr_ord_keycode" }
 rayon = "1.7.0"
 tokio-util = { version = "0.7.8", features = ["io"] }
+palette = "0.7.3"

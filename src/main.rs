@@ -31,7 +31,11 @@ use graphics_backend::{
 };
 use graphics_base_traits::traits::GraphicsSizeQuery;
 use graphics_types::rendering::{ColorRGBA, State};
-use math::math::vector::vec2;
+use math::math::{normalize, vector::vec2};
+use palette::{
+    convert::{FromColorUnclamped, IntoColorUnclamped},
+    IntoColor,
+};
 use serde::{Deserialize, Serialize};
 use std::{io::Cursor, net::SocketAddr, num::NonZeroUsize, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
@@ -48,6 +52,10 @@ struct RenderParams {
     x: Option<f32>,
     y: Option<f32>,
     map_name: Option<String>,
+    body: Option<i32>,
+    feet: Option<i32>,
+    dir_x: Option<f32>,
+    dir_y: Option<f32>,
 }
 
 struct ClientLoad {
@@ -116,6 +124,8 @@ impl Client {
         let mut zoom = params.zoom.unwrap_or(0.5);
         let mut x = params.x.unwrap_or(default_x);
         let mut y = params.y.unwrap_or(default_y);
+        let mut dir_x = params.dir_x.unwrap_or(1.0);
+        let mut dir_y = params.dir_y.unwrap_or(0.0);
 
         if zoom.is_nan() || zoom.is_infinite() {
             zoom = 1.0;
@@ -131,6 +141,27 @@ impl Client {
             y = 0.0;
         }
         y = y.clamp(0.0, 300000.0);
+
+        if dir_x.is_nan() || dir_x.is_infinite() {
+            dir_x = 0.0;
+        }
+        dir_x = dir_x.clamp(-1.0, 1.0);
+
+        if dir_y.is_nan() || dir_y.is_infinite() {
+            dir_y = 0.0;
+        }
+        dir_y = dir_y.clamp(-1.0, 1.0);
+
+        let custom_color = params.body.is_some();
+
+        let color_body = params.body.unwrap_or(0);
+        let color_feet = params.feet.unwrap_or(0);
+
+        if dir_x.abs() < 0.001 && dir_y.abs() < 0.001 {
+            dir_x = 1.0;
+        }
+
+        let dir = normalize(&vec2::new(dir_x, dir_y));
 
         let map = if is_ctf1 {
             &mut self.client_map
@@ -192,27 +223,70 @@ impl Client {
                 &self.io_batcher,
                 &self.thread_pool,
             );
+
+            let color_body = if !custom_color {
+                ColorRGBA {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 1.0,
+                    a: 1.0,
+                }
+            } else {
+                let _a = ((color_body >> 24) & 0xFF) as f64 / 255.0;
+                let h = ((color_body >> 16) & 0xFF) as f64 / 255.0;
+                let s = ((color_body >> 8) & 0xFF) as f64 / 255.0;
+                let l = ((color_body >> 0) & 0xFF) as f64 / 255.0;
+                let mut hsl = palette::Hsl::new_const((h * 360.0).into(), s, l);
+                let darkest = 0.5;
+                hsl.lightness = darkest + hsl.lightness * (1.0 - darkest);
+
+                let rgb = palette::rgb::LinSrgb::from_color_unclamped(hsl);
+                ColorRGBA {
+                    r: rgb.red as f32,
+                    g: rgb.green as f32,
+                    b: rgb.blue as f32,
+                    a: 1.0,
+                }
+            };
+
+            let color_feet = if !custom_color {
+                ColorRGBA {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 1.0,
+                    a: 1.0,
+                }
+            } else {
+                let _a = ((color_feet >> 24) & 0xFF) as f64 / 255.0;
+                let h = ((color_feet >> 16) & 0xFF) as f64 / 255.0;
+                let s = ((color_feet >> 8) & 0xFF) as f64 / 255.0;
+                let l = ((color_feet >> 0) & 0xFF) as f64 / 255.0;
+                let mut hsl = palette::Hsl::new_const((h * 360.0).into(), s, l);
+                let darkest = 0.5;
+                hsl.lightness = darkest + hsl.lightness * (1.0 - darkest);
+
+                let rgb = palette::rgb::LinSrgb::from_color_unclamped(hsl);
+                ColorRGBA {
+                    r: rgb.red as f32,
+                    g: rgb.green as f32,
+                    b: rgb.blue as f32,
+                    a: 1.0,
+                }
+            };
+
             let tee_render_info = TeeRenderInfo {
-                render_skin: TeeRenderSkinTextures::Original(&skin.textures),
-                color_body: ColorRGBA {
-                    r: 1.0,
-                    g: 1.0,
-                    b: 1.0,
-                    a: 1.0,
+                render_skin: if custom_color {
+                    TeeRenderSkinTextures::Colorable(&skin.grey_scaled_textures)
+                } else {
+                    TeeRenderSkinTextures::Original(&skin.textures)
                 },
-                color_feet: ColorRGBA {
-                    r: 1.0,
-                    g: 1.0,
-                    b: 1.0,
-                    a: 1.0,
-                },
+                color_body,
+                color_feet,
                 metrics: &skin.metrics,
                 got_air_jump: true,
                 feet_flipped: false,
                 size: 64.0,
             };
-
-            let dir = vec2::new(1.0, 0.0);
 
             self.tee_renderer.render_tee(
                 &mut self.graphics,
