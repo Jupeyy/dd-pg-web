@@ -7,17 +7,29 @@ edition = "2021"
 git-fetch-with-cli = true
 
 [dependencies]
-shared-game = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-client-render = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-native = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-graphics = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-graphics-base-traits = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-graphics-backend = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-graphics-types = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-base = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-base-fs = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-config = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
-math = { git = "https://github.com/Jupeyy/dd-pg", rev = "e9e8cfb09a4a4dbfc26c5a7f7f276b76d3f85c40" }
+game-interface = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+shared-game = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+client-render-base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+client-render-game = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+client-render = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+client-map = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+client-containers = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+native = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+graphics = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+graphics-base-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+graphics-backend = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+graphics-backend-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+graphics-types = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+base-io = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+base-fs = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+base-http = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+config = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+game-config = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+math = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+sound = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+sound-backend = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+
 axum = { version = "0.6.20", features = ["headers"] }
 serde = "1.0.188"
 tracing = "0.1.37"
@@ -26,3 +38,9 @@ winit = { git = "https://github.com/Jupeyy/winit/", branch = "pr_ord_keycode" }
 rayon = "1.7.0"
 tokio-util = { version = "0.7.8", features = ["io"] }
 palette = "0.7.3"
+anyhow = { version = "1.0.86", features = ["backtrace"] }
+env_logger = "0.11.5"
+parking_lot = "0.12.3"
+dotenvy = "0.15.7"
+
+serenity = { git = "https://github.com/serenity-rs/serenity", rev = "2bb56baf63d8f65246f075f1922d2d0571ae0cb5" }
