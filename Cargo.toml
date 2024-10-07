@@ -8,25 +8,19 @@ git-fetch-with-cli = true
 
 [dependencies]
 game-interface = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
-shared-game = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 client-render-base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 client-render-game = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 client-render = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
-client-map = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 client-containers = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
-native = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 graphics = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
-graphics-base-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 graphics-backend = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 graphics-backend-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 graphics-types = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 base-io = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
-base-io-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 base-fs = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 base-http = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 config = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
-game-config = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 math = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 pool = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
 ui-base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3ba57e5a18169250e96bc1fe5a54b4fb" }
@@ -35,9 +29,7 @@ sound-backend = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "1054447b3b
 
 axum = { version = "0.6.20", features = ["headers"] }
 serde = "1.0.188"
-tracing = "0.1.37"
 tokio = { version = "1.32.0", features = ["rt-multi-thread", "sync", "fs", "time", "macros"] }
-winit = { git = "https://github.com/Jupeyy/winit/", branch = "pr_ord_keycode" }
 rayon = "1.7.0"
 tokio-util = { version = "0.7.8", features = ["io"] }
 palette = "0.7.3"
@@ -47,8 +39,6 @@ parking_lot = "0.12.3"
 dotenvy = "0.15.7"
 serde_json = "1.0.125"
 reqwest = { version = "0.12.5", default-features = false, features = ["rustls-tls"] }
-serde_with = "3.9.0"
-log = "0.4.22"
 urlencoding = "2.1.3"
 
 serenity = { git = "https://github.com/serenity-rs/serenity", rev = "2bb56baf63d8f65246f075f1922d2d0571ae0cb5" }
