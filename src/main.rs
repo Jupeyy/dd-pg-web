@@ -278,6 +278,7 @@ impl Client {
             "pain" => TeeEye::Pain,
             "happy" => TeeEye::Happy,
             "surprised" => TeeEye::Surprised,
+            "blink" => TeeEye::Blink,
             _ => TeeEye::Normal,
         };
 
