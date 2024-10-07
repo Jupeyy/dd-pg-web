@@ -10,6 +10,7 @@ use base_io::io::Io;
 use client_containers::{
     emoticons::{EmoticonsContainer, EMOTICONS_CONTAINER_PATH},
     entities::{EntitiesContainer, ENTITIES_CONTAINER_PATH},
+    hooks::{HookContainer, HOOK_CONTAINER_PATH},
     skins::{SkinContainer, SKIN_CONTAINER_PATH},
     weapons::{WeaponContainer, WEAPON_CONTAINER_PATH},
 };
@@ -25,17 +26,17 @@ use client_render_base::{
     render::{
         animation::AnimState,
         canvas_mapping::CanvasMappingIngame,
-        default_anim::{base_anim, idle_anim},
-        tee::{RenderTee, TeeRenderHands, TeeRenderInfo, TeeRenderSkinColor},
+        default_anim::{base_anim, idle_anim, inair_anim},
+        tee::{RenderTee, RenderTeeHandMath, TeeRenderHands, TeeRenderInfo, TeeRenderSkinColor},
         toolkit::ToolkitRender,
     },
 };
 use client_render_game::map::render_map_base::{ClientMapRender, RenderMapLoading};
 use config::config::{ConfigBackend, ConfigDebug, ConfigGfx, ConfigSound};
 use game_interface::types::{
-    emoticons::EmoticonType,
+    emoticons::{EmoticonType, IntoEnumIterator},
     render::character::{CharacterRenderInfo, TeeEye},
-    resource_key::NetworkResourceKey,
+    resource_key::{NetworkResourceKey, ResourceKey},
     weapons::WeaponType,
 };
 use graphics::graphics::graphics::{Graphics, ScreenshotCb};
@@ -48,14 +49,15 @@ use graphics_backend::{
 
 use graphics_backend_traits::traits::GraphicsBackendInterface;
 
-use base_io_traits::fs_traits::FileSystemEntryTy;
 use graphics_types::rendering::{ColorRgba, State};
-use math::math::{normalize, vector::vec2};
+use math::math::{
+    normalize,
+    vector::{dvec2, vec2},
+};
 use palette::convert::FromColorUnclamped;
 use pool::datatypes::PoolLinkedHashMap;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use serenity::all::{
     Context, CreateAttachment, CreateCommand, CreateCommandOption, CreateInteractionResponse,
     CreateInteractionResponseMessage, EventHandler, GatewayIntents, GuildId, Interaction, Mention,
@@ -65,10 +67,8 @@ use sound::sound::SoundManager;
 use sound_backend::sound_backend::SoundBackend;
 use std::{
     cell::RefCell,
-    collections::HashMap,
     io::Cursor,
     net::SocketAddr,
-    path::PathBuf,
     rc::Rc,
     sync::{Arc, LazyLock},
     time::Duration,
@@ -102,52 +102,53 @@ struct Skin {
     color_feet: Option<i32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ServerClient {
-    name: String,
-    skin: Skin,
-}
-
-#[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Server {
-    #[serde_as(as = "serde_with::VecSkipError<_>")]
-    clients: Vec<ServerClient>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ServerWrapper {
-    info: Server,
-}
-
-#[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Wrapper {
-    #[serde_as(as = "serde_with::VecSkipError<_>")]
-    servers: Vec<ServerWrapper>,
-}
-
-type PlayerList = Arc<parking_lot::Mutex<(HashMap<String, Skin>, std::time::Instant)>>;
-static PLAYERS: LazyLock<PlayerList> = LazyLock::new(|| {
-    Arc::new(parking_lot::Mutex::new((
-        Default::default(),
+type PlayerApiState = Arc<parking_lot::Mutex<std::time::Instant>>;
+static PLAYERS: LazyLock<PlayerApiState> = LazyLock::new(|| {
+    Arc::new(parking_lot::Mutex::new(
         std::time::Instant::now() - Duration::from_secs(60 * 60 * 60),
-    )))
+    ))
 });
 
 #[derive(Debug, Default, Deserialize)]
 struct RenderParams {
+    /// Name of the skin to draw
     skin_name: String,
+    /// Optional player name to render as nameplate
     player_name: Option<String>,
+    /// Camera zoom
     zoom: Option<f32>,
+    /// Camera pos x
     x: Option<f32>,
+    /// Camera pos y
     y: Option<f32>,
-    map_name: Option<String>,
+    /// Legacy color body
     body: Option<i32>,
+    /// Legacy color feet
     feet: Option<i32>,
+    /// Cursor dir x
     dir_x: Option<f32>,
+    /// Cursor dir y
     dir_y: Option<f32>,
+    /// Tee eyes
     eyes: Option<String>,
+    /// Tee weapon
+    weapon: Option<String>,
+    /// Tee emoticon
+    emoticon: Option<String>,
+    /// Whether the Tee used its double jump
+    used_air_jump: Option<bool>,
+    /// Whether the Tee is in the air right now
+    in_air: Option<bool>,
+    /// The x position of the hook relative to the Tee
+    hook_x: Option<f32>,
+    /// The y position of the hook relative to the Tee
+    hook_y: Option<f32>,
+
+    /// Name of the map to render
+    map_name: Option<String>,
+    /// Use skins.tw player api to fetch latest
+    /// skin of the player
+    use_player_api: Option<bool>,
 }
 
 struct ClientLoad {
@@ -184,10 +185,10 @@ struct Client {
     entities_container: EntitiesContainer,
     weapon_container: WeaponContainer,
     emoticon_container: EmoticonsContainer,
+    hooks_container: HookContainer,
 
     sys: System,
     client_map: ClientMapRender,
-    skin_names: Vec<String>,
 }
 
 impl Client {
@@ -203,17 +204,13 @@ impl Client {
     }
 
     pub fn render(&mut self, params: RenderParams, sender: Sender<anyhow::Result<Vec<u8>>>) {
-        let mut skin_name = params.skin_name;
+        let skin_name = params.skin_name;
 
         let map_name = params.map_name.unwrap_or("ctf1".to_string());
         let is_ctf1 = map_name == "ctf1";
 
         let default_x = if is_ctf1 { 173.12 } else { 1358.08 };
         let default_y = if is_ctf1 { 688.96 } else { 24240.96 };
-
-        if !self.skin_names.iter().any(|str| (*str).eq(&skin_name)) {
-            skin_name = "default".to_string();
-        }
 
         let mut zoom = params.zoom.unwrap_or(0.5);
         let mut x = params.x.unwrap_or(default_x);
@@ -257,6 +254,19 @@ impl Client {
 
         let dir = normalize(&vec2::new(dir_x, dir_y));
 
+        let hook_pos = params.hook_x.zip(params.hook_y).map(|(mut x, mut y)| {
+            if x.is_nan() || x.is_infinite() {
+                x = 0.0;
+            }
+            x = x.clamp(-10000.0, 10000.0);
+
+            if y.is_nan() || y.is_infinite() {
+                y = 0.0;
+            }
+            y = y.clamp(-10000.0, 10000.0);
+            vec2::new(x, y)
+        });
+
         let tee_eyes = match params
             .eyes
             .unwrap_or("normal".to_string())
@@ -270,6 +280,24 @@ impl Client {
             "surprised" => TeeEye::Surprised,
             _ => TeeEye::Normal,
         };
+
+        let weapon = params
+            .weapon
+            .map(|weapon| match weapon.to_lowercase().as_str() {
+                "gun" => WeaponType::Gun,
+                "shotgun" => WeaponType::Shotgun,
+                "grenade" => WeaponType::Grenade,
+                "laser" => WeaponType::Laser,
+                _ => WeaponType::Hammer,
+            });
+
+        let emoticon = params.emoticon.and_then(|emoticon| {
+            EmoticonType::iter().find(|e| {
+                let e_str: &'static str = e.into();
+
+                e_str.to_lowercase() == emoticon.to_lowercase()
+            })
+        });
 
         let map_file = &mut self.client_map;
         let map = map_file.continue_loading(&Default::default());
@@ -295,43 +323,33 @@ impl Client {
             Self::map_canvas_for_players(&self.graphics, &mut state, 0.0, 0.0, zoom);
             let mut anim_state = AnimState::default();
             anim_state.set(&base_anim(), &Duration::from_millis(0));
-            anim_state.add(&idle_anim(), &Duration::from_millis(0), 1.0);
+            if params.in_air.unwrap_or_default() {
+                anim_state.add(&inair_anim(), &Duration::from_millis(0), 1.0);
+            } else {
+                anim_state.add(&idle_anim(), &Duration::from_millis(0), 1.0);
+            }
             let skin_name: Option<NetworkResourceKey<24>> = skin_name.as_str().try_into().ok();
             let skin = self.skin_container.get_or_default_opt(skin_name.as_ref());
 
-            let weapon = self.weapon_container.default_key.clone();
-            let weapons = self.weapon_container.get_or_default(&weapon);
-            self.toolkit_renderer.render_weapon_for_player(
-                weapons,
-                &CharacterRenderInfo {
-                    lerped_pos: Default::default(),
-                    lerped_vel: Default::default(),
-                    lerped_hook_pos: Default::default(),
-                    has_air_jump: Default::default(),
-                    cursor_pos: Default::default(),
-                    move_dir: Default::default(),
-                    cur_weapon: WeaponType::Hammer,
-                    recoil_ticks_passed: Default::default(),
-                    left_eye: Default::default(),
-                    right_eye: Default::default(),
-                    buffs: PoolLinkedHashMap::new_without_pool(),
-                    debuffs: PoolLinkedHashMap::new_without_pool(),
-                    animation_ticks_passed: Default::default(),
-                    game_ticks_passed: Default::default(),
-                    game_round_ticks: Default::default(),
-                    emoticon: Default::default(),
-                },
-                Default::default(),
-                50.try_into().unwrap(),
-                &GameTimeInfo {
-                    ticks_per_second: 50.try_into().unwrap(),
-                    intra_tick_time: Duration::ZERO,
-                },
-                state,
-                false,
-                false,
-            );
-
+            let mut render_info = CharacterRenderInfo {
+                lerped_pos: Default::default(),
+                lerped_vel: Default::default(),
+                lerped_hook_pos: Default::default(),
+                has_air_jump: Default::default(),
+                cursor_pos: dvec2::new(dir.x as f64, dir.y as f64),
+                move_dir: Default::default(),
+                cur_weapon: Default::default(),
+                recoil_ticks_passed: Default::default(),
+                left_eye: Default::default(),
+                right_eye: Default::default(),
+                buffs: PoolLinkedHashMap::new_without_pool(),
+                debuffs: PoolLinkedHashMap::new_without_pool(),
+                animation_ticks_passed: Default::default(),
+                game_ticks_passed: Default::default(),
+                game_round_ticks: Default::default(),
+                emoticon: Default::default(),
+            };
+            // tee info
             let color_body = if !custom_color {
                 TeeRenderSkinColor::Original
             } else {
@@ -377,9 +395,52 @@ impl Client {
                 eye_right: tee_eyes,
                 color_body,
                 color_feet,
-                got_air_jump: true,
+                got_air_jump: !params.used_air_jump.unwrap_or_default(),
                 feet_flipped: false,
                 size: 2.0,
+            };
+
+            // hook
+            let hook_hand = hook_pos.and_then(|hook_pos| {
+                render_info.lerped_hook_pos = Some(hook_pos);
+                self.toolkit_renderer.render_hook_for_player(
+                    &mut self.hooks_container,
+                    None,
+                    vec2::default(),
+                    &render_info,
+                    state,
+                )
+            });
+            if let Some(hook_hand) = hook_hand {
+                self.tee_renderer.render_tee_hand(
+                    &RenderTeeHandMath::new(&vec2::default(), 2.0, &hook_hand),
+                    &color_body,
+                    skin,
+                    1.0,
+                    &state,
+                );
+            }
+
+            let weapon_hand = if let Some(weapon_ty) = weapon {
+                render_info.cur_weapon = weapon_ty;
+
+                let weapon = self.weapon_container.default_key.clone();
+                let weapons = self.weapon_container.get_or_default(&weapon);
+                self.toolkit_renderer.render_weapon_for_player(
+                    weapons,
+                    &render_info,
+                    Default::default(),
+                    50.try_into().unwrap(),
+                    &GameTimeInfo {
+                        ticks_per_second: 50.try_into().unwrap(),
+                        intra_tick_time: Duration::ZERO,
+                    },
+                    state,
+                    false,
+                    false,
+                )
+            } else {
+                None
             };
 
             self.tee_renderer.render_tee(
@@ -388,7 +449,7 @@ impl Client {
                 &tee_render_info,
                 &TeeRenderHands {
                     left: None,
-                    right: None,
+                    right: weapon_hand,
                 },
                 &dir,
                 &vec2::new(0.0, 0.0),
@@ -396,31 +457,35 @@ impl Client {
                 &state,
             );
 
-            let emoticon_key = self.emoticon_container.default_key.clone();
-            self.emoticon_renderer.render(&mut RenderEmoticonPipe {
-                emoticon_container: &mut self.emoticon_container,
-                pos: vec2::new(0.0, 0.0),
-                state: &state,
-                emoticon_key: Some(&emoticon_key),
-                emoticon: EmoticonType::HEARTS,
-                emoticon_ticks: 90,
-                intra_tick_time: Duration::ZERO,
-                ticks_per_second: 50.try_into().unwrap(),
-            });
+            if let Some(emoticon) = emoticon {
+                let emoticon_key = self.emoticon_container.default_key.clone();
+                self.emoticon_renderer.render(&mut RenderEmoticonPipe {
+                    emoticon_container: &mut self.emoticon_container,
+                    pos: vec2::new(0.0, 0.0),
+                    state: &state,
+                    emoticon_key: Some(&emoticon_key),
+                    emoticon,
+                    emoticon_ticks: 90,
+                    intra_tick_time: Duration::ZERO,
+                    ticks_per_second: 50.try_into().unwrap(),
+                });
+            }
 
             let name = if let Some(name) = &params.player_name {
-                name.clone()
+                Some(name)
             } else {
-                "".to_string()
+                None
             };
 
-            self.nameplate_renderer.render(&mut NameplateRenderPipe {
-                cur_time: &self.sys.time_get_nanoseconds(),
-                name: &name,
-                state: &state,
-                pos: &vec2::new(0.0, 0.0),
-                camera_zoom: zoom.clamp(0.3, f32::MAX),
-            });
+            if let Some(name) = name {
+                self.nameplate_renderer.render(&mut NameplateRenderPipe {
+                    cur_time: &self.sys.time_get_nanoseconds(),
+                    name,
+                    state: &state,
+                    pos: &vec2::new(0.0, 0.0),
+                    camera_zoom: zoom.clamp(0.3, f32::MAX),
+                });
+            }
 
             map.render.render_foreground(&mut RenderPipeline::new(
                 &map.data.buffered_map.map_visual,
@@ -457,20 +522,40 @@ impl Client {
         self.graphics.swap();
         self.graphics_backend.wait_idle().unwrap();
         self.graphics.check_pending_screenshot();
+
+        self.skin_container.update(
+            &self.sys.time_get_nanoseconds(),
+            &Duration::from_secs(5),
+            &Duration::from_secs(1),
+            [].into_iter(),
+        );
+    }
+
+    pub fn wait_skin_loaded(&mut self, skin_name: &str) {
+        let Ok(skin_key): Result<ResourceKey, _> = skin_name.try_into() else {
+            return;
+        };
+        self.skin_container.blocking_wait_loaded(&skin_key);
     }
 
     fn new(loading: ClientLoad) -> anyhow::Result<Self> {
         // then prepare components allocations etc.
         let tp = loading.tp.clone();
 
+        let width: u32 = std::env::var("WIDTH")
+            .map_err(|err| anyhow!(err))
+            .and_then(|s| s.parse::<u32>().map_err(|err| anyhow!(err)))
+            .unwrap_or(800);
+        let height: u32 = std::env::var("HEIGHT")
+            .map_err(|err| anyhow!(err))
+            .and_then(|s| s.parse::<u32>().map_err(|err| anyhow!(err)))
+            .unwrap_or(600);
+
         let (backend_base, streamed_data) = GraphicsBackendBase::new(
             loading.backend_loading_io,
             loading.backend_loading,
             &tp,
-            BackendWindow::Headless {
-                width: 300,
-                height: 200,
-            },
+            BackendWindow::Headless { width, height },
         )?;
 
         let window_props = backend_base.get_window_props();
@@ -493,7 +578,7 @@ impl Client {
         let scene = sound.scene_handle.create(Default::default());
 
         let default_skin = SkinContainer::load_default(&loading.io, SKIN_CONTAINER_PATH.as_ref());
-        let mut skins = SkinContainer::new(
+        let skins = SkinContainer::new(
             loading.io.clone(),
             tp.clone(),
             default_skin,
@@ -547,36 +632,19 @@ impl Client {
             &scene,
             WEAPON_CONTAINER_PATH.as_ref(),
         );
-
-        let fs = loading.io.fs.clone();
-        let skin_names: Vec<_> = loading
-            .io
-            .io_batcher
-            .spawn(async move {
-                let files = fs.entries_in_dir("skins".as_ref()).await?;
-
-                Ok(files)
-            })
-            .get_storage()
-            .unwrap()
-            .into_iter()
-            .map(|(skin_name, ty)| {
-                let skin: PathBuf = skin_name.clone().into();
-                let skin = if matches!(ty, FileSystemEntryTy::File { .. }) {
-                    skin.file_stem()
-                        .and_then(|s| s.to_str().map(|s| s.to_string()))
-                        .unwrap_or_default()
-                } else {
-                    skin_name.clone()
-                };
-                skin
-            })
-            .collect();
-
-        skin_names.iter().for_each(|skin| {
-            let key: Option<NetworkResourceKey<24>> = skin.as_str().try_into().ok();
-            skins.get_or_default_opt(key.as_ref());
-        });
+        let default_hook = HookContainer::load_default(&loading.io, HOOK_CONTAINER_PATH.as_ref());
+        let hooks_container = HookContainer::new(
+            loading.io.clone(),
+            tp.clone(),
+            default_hook,
+            None,
+            None,
+            "hooks-container",
+            &graphics,
+            &sound,
+            &scene,
+            HOOK_CONTAINER_PATH.as_ref(),
+        );
 
         let fs = loading.io.fs.clone();
         let ctf1 = loading
@@ -614,10 +682,10 @@ impl Client {
             entities_container: entities,
             emoticon_container: emoticons_container,
             weapon_container: weapons_container,
+            hooks_container,
 
             client_map,
             sys: loading.sys,
-            skin_names,
         })
     }
 
@@ -631,7 +699,14 @@ impl Client {
             .build()
             .unwrap();
         let _g = rt.enter();
-        rt.block_on(async move { tokio::join!(async_main(), async_main_discord()) });
+
+        let init_discord = std::env::var("DISCORD_TOKEN").is_ok();
+
+        if init_discord {
+            rt.block_on(async move { tokio::join!(async_main(), async_main_discord()) });
+        } else {
+            rt.block_on(async_main());
+        }
     }
 }
 
@@ -640,6 +715,8 @@ fn main() {
         unsafe { std::env::set_var("RUST_LOG", "warn,df::tract=error") };
     }
     env_logger::init();
+
+    dotenvy::dotenv().ok();
 
     let io = Io::new(
         |runtime| {
@@ -684,14 +761,14 @@ fn main() {
 }
 
 async fn async_main() {
-    // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(generate_preview));
+    let app = Router::new().route("/", get(generate_preview));
 
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3002));
+    let port: u16 = std::env::var("PORT")
+        .map_err(|err| anyhow!(err))
+        .and_then(|s| s.parse::<u16>().map_err(|err| anyhow!(err)))
+        .unwrap_or(3002);
+
+    let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -734,61 +811,6 @@ impl EventHandler for Handler {
             } else {
                 "".to_string()
             };
-            /*let must_update = unsafe {
-                let mut g = PLAYERS.lock();
-                let (_, now) = &mut *g;
-                let must_update =
-                    std::time::Instant::now().duration_since(*now) > Duration::from_secs(20);
-                if must_update {
-                    *now = std::time::Instant::now();
-                }
-                must_update
-            };
-
-            if must_update {
-                log::info!("updating player list");
-                unsafe {
-                    match HTTP
-                        .download_text(
-                            "https://master1.ddnet.org/ddnet/15/servers.json"
-                                .try_into()
-                                .unwrap(),
-                        )
-                        .await
-                        .map_err(|err| anyhow!(err))
-                        .and_then(|s| {
-                            serde_json::from_str::<Wrapper>(&s).map_err(|err| anyhow!(err))
-                        }) {
-                        Ok(wrapper) => {
-                            let players = wrapper
-                                .servers
-                                .into_iter()
-                                .flat_map(|server| {
-                                    server
-                                        .info
-                                        .clients
-                                        .into_iter()
-                                        .map(|client| (client.name, client.skin))
-                                })
-                                .collect::<HashMap<_, _>>();
-
-                            PLAYERS.lock().0 = players;
-                        }
-                        Err(err) => {
-                            log::error!("{err}");
-                        }
-                    }
-                }
-            }
-
-            let player = unsafe {
-                let g = PLAYERS.lock();
-                let (players, _) = &*g;
-                players
-                    .get(&player_name)
-                    .cloned()
-                    .map(|s| (player_name.clone(), s))
-            }*/
 
             if let Some(content) = content {
                 let img = match HTTP
@@ -799,6 +821,8 @@ impl EventHandler for Handler {
                                 &zoom=0.25\
                                 &x=17.0\
                                 &y=25.5\
+                                &weapon=hammer\
+                                &emoticon=hearts\
                                 &eyes=happy",
                             encode(&player_name)
                         )
@@ -858,8 +882,6 @@ impl EventHandler for Handler {
 async fn async_main_discord() {
     let framework = StandardFramework::new();
 
-    dotenvy::dotenv().ok();
-
     // Login with a bot token from the environment
     let token = std::env::var("DISCORD_TOKEN").expect("token");
     let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
@@ -875,60 +897,57 @@ async fn async_main_discord() {
     }
 }
 
-fn render_global(params: RenderParams, sender: Sender<anyhow::Result<Vec<u8>>>) {
-    CLIENT
-        .blocking_lock()
-        .as_mut()
-        .unwrap()
-        .0
-        .render(params, sender)
-}
-
 async fn generate_preview(params: Option<Query<RenderParams>>) -> impl IntoResponse {
     if let Some(Query(mut params)) = params {
-        let can_update = {
-            let mut g = PLAYERS.lock();
-            let (_, now) = &mut *g;
-            let can_update =
-                std::time::Instant::now().duration_since(*now) > Duration::from_millis(500);
-            if can_update {
-                *now = std::time::Instant::now();
-            } else {
-                return "Rate limited".into_response();
-            }
-            can_update
-        };
-
-        if can_update && params.player_name.is_some() {
-            if let Ok(skin) = HTTP
-                .get(
-                    format!(
-                        "https://ddstats.tw/profile/json?player={}",
-                        encode(params.player_name.as_ref().unwrap())
-                    )
-                    .as_str(),
-                )
-                .send()
-                .await
-            {
-                if let Ok(skin) = skin
-                    .text()
-                    .await
-                    .map_err(|err| anyhow!(err))
-                    .and_then(|s| serde_json::from_str::<Skin>(&s).map_err(|err| anyhow!(err)))
-                {
-                    params.player_name = params.player_name.clone();
-                    params.skin_name = skin.name;
-                    params.body = skin.color_body;
-                    params.feet = skin.color_feet;
+        if params.use_player_api.is_some_and(|b| b) {
+            let can_update = {
+                let mut g = PLAYERS.lock();
+                let now = &mut *g;
+                let can_update =
+                    std::time::Instant::now().duration_since(*now) > Duration::from_millis(500);
+                if can_update {
+                    *now = std::time::Instant::now();
+                } else {
+                    return "Rate limited".into_response();
                 }
-            }
-        };
+                can_update
+            };
+
+            if can_update && params.player_name.is_some() {
+                if let Ok(skin) = HTTP
+                    .get(
+                        format!(
+                            "https://ddstats.tw/profile/json?player={}",
+                            encode(params.player_name.as_ref().unwrap())
+                        )
+                        .as_str(),
+                    )
+                    .send()
+                    .await
+                {
+                    if let Ok(skin) =
+                        skin.text().await.map_err(|err| anyhow!(err)).and_then(|s| {
+                            serde_json::from_str::<Skin>(&s).map_err(|err| anyhow!(err))
+                        })
+                    {
+                        params.player_name = params.player_name.clone();
+                        params.skin_name = skin.name;
+                        params.body = skin.color_body;
+                        params.feet = skin.color_feet;
+                    }
+                }
+            };
+        }
 
         let (sender, receiver) = oneshot::channel();
-        tokio::task::spawn_blocking(|| render_global(params, sender))
-            .await
-            .unwrap();
+        tokio::task::spawn_blocking(|| {
+            let mut client = CLIENT.blocking_lock();
+            let client = client.as_mut().unwrap();
+            client.0.wait_skin_loaded(&params.skin_name);
+            client.0.render(params, sender)
+        })
+        .await
+        .unwrap();
 
         let img = receiver.await.unwrap().unwrap();
 
