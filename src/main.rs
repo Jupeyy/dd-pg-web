@@ -35,6 +35,7 @@ use client_render_game::map::render_map_base::{ClientMapRender, RenderMapLoading
 use config::config::{ConfigBackend, ConfigDebug, ConfigGfx, ConfigSound};
 use game_interface::types::{
     emoticons::{EmoticonType, IntoEnumIterator},
+    network_string::NetworkString,
     render::character::{CharacterRenderInfo, TeeEye},
     resource_key::{NetworkResourceKey, ResourceKey},
     weapons::WeaponType,
@@ -95,7 +96,7 @@ static HTTP: LazyLock<Arc<reqwest::Client>> = LazyLock::new(Default::default);
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Skin {
     #[serde(rename = "skin_name")]
-    name: String,
+    name: NetworkString<24>,
     #[serde(alias = "skin_color_body")]
     color_body: Option<i32>,
     #[serde(alias = "skin_color_feet")]
@@ -112,9 +113,9 @@ static PLAYERS: LazyLock<PlayerApiState> = LazyLock::new(|| {
 #[derive(Debug, Default, Deserialize)]
 struct RenderParams {
     /// Name of the skin to draw
-    skin_name: String,
+    skin_name: NetworkString<24>,
     /// Optional player name to render as nameplate
-    player_name: Option<String>,
+    player_name: Option<NetworkString<128>>,
     /// Camera zoom
     zoom: Option<f32>,
     /// Camera pos x
@@ -794,8 +795,24 @@ impl EventHandler for Handler {
                     .parse()
                     .expect("GUILD_ID must be an integer"),
             );
+
+            let on_err = |err: String| {
+                Box::pin(async {
+                    let _ = command
+                        .create_response(
+                            &ctx.http,
+                            CreateInteractionResponse::Message(
+                                CreateInteractionResponseMessage::new()
+                                    .ephemeral(true)
+                                    .content(err),
+                            ),
+                        )
+                        .await;
+                })
+            };
+
             if command.guild_id != Some(guild_id) {
-                return;
+                return on_err("can only be used in the right discord".into()).await;
             }
 
             let main_cmd_str = Mention::User(command.user.id).to_string()
@@ -819,10 +836,11 @@ impl EventHandler for Handler {
             };
 
             if let Some(content) = content {
-                let img = match HTTP
-                    .get(
-                        format!(
-                            "http://localhost:3002/?player_name={}\
+                let img =
+                    match HTTP
+                        .get(
+                            format!(
+                                "http://localhost:3002/?player_name={}\
                                 &skin_name=default\
                                 &zoom=0.25\
                                 &x=17.0\
@@ -831,23 +849,34 @@ impl EventHandler for Handler {
                                 &emoticon=hearts\
                                 &use_player_api=true\
                                 &eyes=happy",
-                            encode(&player_name)
+                                encode(&player_name)
+                            )
+                            .as_str(),
                         )
-                        .as_str(),
-                    )
-                    .send()
-                    .await
-                {
-                    Ok(skin) => {
-                        let Ok(skin) = skin.bytes().await else {
-                            return;
-                        };
-                        skin
-                    }
-                    Err(_) => {
-                        return;
-                    }
-                };
+                        .send()
+                        .await
+                        .and_then(|res| res.error_for_status())
+                    {
+                        Ok(skin) => {
+                            if skin.headers().get("content-type").is_some_and(|ty| {
+                                ty.to_str().is_ok_and(|ty| ty.contains("image/png"))
+                            }) {
+                                match skin.bytes().await {
+                                    Ok(skin) => skin,
+                                    Err(err) => return on_err(err.to_string()).await,
+                                }
+                            } else {
+                                return on_err(format!(
+                                    "Failed to fetch image: {}",
+                                    skin.text().await.unwrap_or_else(|err| err.to_string())
+                                ))
+                                .await;
+                            }
+                        }
+                        Err(err) => {
+                            return on_err(err.to_string()).await;
+                        }
+                    };
 
                 let data = CreateInteractionResponseMessage::new()
                     .content(content)
