@@ -8,6 +8,7 @@ use base_fs::filesys::FileSystem;
 use base_http::http::HttpClient;
 use base_io::io::Io;
 use client_containers::{
+    container::ContainerKey,
     emoticons::{EmoticonsContainer, EMOTICONS_CONTAINER_PATH},
     entities::{EntitiesContainer, ENTITIES_CONTAINER_PATH},
     hooks::{HookContainer, HOOK_CONTAINER_PATH},
@@ -54,9 +55,11 @@ use graphics_types::rendering::{ColorRgba, State};
 use math::math::{
     normalize,
     vector::{dvec2, vec2},
+    Rng, RngSlice,
 };
 use palette::convert::FromColorUnclamped;
 use pool::datatypes::PoolLinkedHashMap;
+use rand::{seq::SliceRandom, RngCore};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde::{Deserialize, Serialize};
 use serenity::all::{
@@ -95,6 +98,8 @@ static HTTP: LazyLock<Arc<reqwest::Client>> = LazyLock::new(Default::default);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Skin {
+    #[serde(rename = "name")]
+    player_name: NetworkString<128>,
     #[serde(rename = "skin_name")]
     name: NetworkString<24>,
     #[serde(alias = "skin_color_body")]
@@ -204,7 +209,12 @@ impl Client {
             .map_canvas_for_ingame_items(state, center_x, center_y, zoom);
     }
 
-    pub fn render(&mut self, params: RenderParams, sender: Sender<anyhow::Result<Vec<u8>>>) {
+    pub fn render(
+        &mut self,
+        params: RenderParams,
+        sender: Sender<anyhow::Result<Vec<u8>>>,
+        time: Duration,
+    ) {
         let skin_name = params.skin_name;
 
         let map_name = params.map_name.unwrap_or("ctf1".to_string());
@@ -309,8 +319,8 @@ impl Client {
                 &map.data.buffered_map.map_visual,
                 &map.data.buffered_map,
                 &Default::default(),
-                &self.sys.time_get_nanoseconds(),
-                &self.sys.time_get_nanoseconds(),
+                &time,
+                &time,
                 &Camera {
                     pos: vec2::new(x, y),
                     zoom,
@@ -493,8 +503,8 @@ impl Client {
                 &map.data.buffered_map.map_visual,
                 &map.data.buffered_map,
                 &Default::default(),
-                &Duration::ZERO,
-                &Duration::ZERO,
+                &time,
+                &time,
                 &Camera {
                     pos: vec2::new(x, y),
                     zoom,
@@ -525,12 +535,12 @@ impl Client {
         self.graphics_backend.wait_idle().unwrap();
         self.graphics.check_pending_screenshot();
 
-        self.skin_container.update(
+        /*self.skin_container.update(
             &self.sys.time_get_nanoseconds(),
             &Duration::from_secs(5),
             &Duration::from_secs(1),
             [].into_iter(),
-        );
+        );*/
     }
 
     pub fn wait_skin_loaded(&mut self, skin_name: &str) {
@@ -697,6 +707,77 @@ impl Client {
     }
 
     fn run(self) {
+        let mut client = self;
+
+        let mut players: Vec<Skin> =
+            serde_json::from_slice(include_bytes!("../player-export.json")).unwrap();
+
+        players.shuffle(&mut rand::rngs::OsRng);
+
+        for player in &players {
+            let key: Result<ContainerKey, _> = player.name.as_str().try_into();
+            if let Ok(key) = key {
+                client.skin_container.get_or_default(&key);
+            }
+        }
+
+        let eyes = ["normal", "angry", "pain", "happy", "surprised", "blink"];
+        let weapons = ["gun", "shotgun", "grenade", "laser"];
+        let emoticons = EmoticonType::iter()
+            .map(|e| {
+                let e_str: &'static str = e.into();
+                e_str.to_lowercase()
+            })
+            .collect::<Vec<_>>();
+
+        let mut rng = Rng::new(rand::rngs::OsRng.next_u64());
+
+        let _ = std::fs::create_dir_all("output/");
+        for (index, player) in players.iter().enumerate() {
+            let (sender, receiver) = oneshot::channel();
+            client.wait_skin_loaded(&player.name);
+            let player_name = player.player_name.as_str();
+
+            client.render(
+                RenderParams {
+                    zoom: Some(0.45),
+                    x: Some(17.0),
+                    y: Some(25.5),
+                    dir_x: None,
+                    dir_y: None,
+                    eyes: Some(eyes.random_entry(&mut rng).to_string()),
+                    weapon: Some(weapons.random_entry(&mut rng).to_string()),
+                    emoticon: Some(emoticons.random_entry(&mut rng).clone()),
+                    used_air_jump: None,
+                    in_air: None,
+                    hook_x: None,
+                    hook_y: None,
+                    map_name: None,
+                    use_player_api: None,
+                    player_name: Some(player_name.try_into().unwrap()),
+                    skin_name: player.name.clone(),
+                    body: player.color_body,
+                    feet: player.color_feet,
+                },
+                sender,
+                Duration::from_millis(1000 / 60) * index as u32,
+            );
+
+            if let Ok(Ok(img)) = receiver.blocking_recv() {
+                let _ = std::fs::write(format!("output/{:0>6}.png", index), img);
+            }
+        }
+
+        let mut index_list = "".to_string();
+
+        use std::fmt::Write;
+        for (index, player) in players.iter().enumerate() {
+            writeln!(&mut index_list, "{}:{}", index, player.player_name.as_str(),).unwrap();
+        }
+        let _ = std::fs::write("output/index.txt", index_list);
+
+        return;
+
         *CLIENT.blocking_lock() = Some(ClientWrapper(self));
 
         let rt = tokio::runtime::Builder::new_multi_thread()
@@ -980,7 +1061,7 @@ async fn generate_preview(params: Option<Query<RenderParams>>) -> impl IntoRespo
             let mut client = CLIENT.blocking_lock();
             let client = client.as_mut().unwrap();
             client.0.wait_skin_loaded(&params.skin_name);
-            client.0.render(params, sender)
+            client.0.render(params, sender, Duration::ZERO)
         })
         .await
         .unwrap();

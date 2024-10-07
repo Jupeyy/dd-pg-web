@@ -4816,6 +4816,7 @@ dependencies = [
  "palette",
  "parking_lot",
  "pool",
+ "rand",
  "rayon",
  "reqwest 0.12.8",
  "serde",
