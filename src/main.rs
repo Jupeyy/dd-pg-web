@@ -1,30 +1,43 @@
+use anyhow::anyhow;
 use axum::{
     async_trait, body::StreamBody, extract::Query, http::header, response::IntoResponse,
     routing::get, Router,
 };
-use base::system::System;
+use base::system::{System, SystemTimeInterface};
 use base_fs::filesys::FileSystem;
 use base_http::http::HttpClient;
 use base_io::io::Io;
 use client_containers::{
+    emoticons::{EmoticonsContainer, EMOTICONS_CONTAINER_PATH},
     entities::{EntitiesContainer, ENTITIES_CONTAINER_PATH},
     skins::{SkinContainer, SKIN_CONTAINER_PATH},
+    weapons::{WeaponContainer, WEAPON_CONTAINER_PATH},
+};
+use client_render::{
+    emoticons::render::{RenderEmoticon, RenderEmoticonPipe},
+    nameplates::render::{NameplateRender, NameplateRenderPipe},
 };
 use client_render_base::{
     map::{
         map_pipeline::MapPipeline,
-        render_pipe::{Camera, RenderPipeline},
-        render_tools::RenderTools,
+        render_pipe::{Camera, GameTimeInfo, RenderPipeline},
     },
     render::{
         animation::AnimState,
+        canvas_mapping::CanvasMappingIngame,
         default_anim::{base_anim, idle_anim},
         tee::{RenderTee, TeeRenderHands, TeeRenderInfo, TeeRenderSkinColor},
+        toolkit::ToolkitRender,
     },
 };
 use client_render_game::map::render_map_base::{ClientMapRender, RenderMapLoading};
-use config::config::{ConfigBackend, ConfigDebug, ConfigGfx, ConfigSound, GfxDebugModes};
-use game_interface::types::{render::character::TeeEye, resource_key::NetworkResourceKey};
+use config::config::{ConfigBackend, ConfigDebug, ConfigGfx, ConfigSound};
+use game_interface::types::{
+    emoticons::EmoticonType,
+    render::character::{CharacterRenderInfo, TeeEye},
+    resource_key::NetworkResourceKey,
+    weapons::WeaponType,
+};
 use graphics::graphics::graphics::{Graphics, ScreenshotCb};
 use graphics_backend::{
     backend::{
@@ -35,32 +48,97 @@ use graphics_backend::{
 
 use graphics_backend_traits::traits::GraphicsBackendInterface;
 
+use base_io_traits::fs_traits::FileSystemEntryTy;
 use graphics_types::rendering::{ColorRgba, State};
 use math::math::{normalize, vector::vec2};
 use palette::convert::FromColorUnclamped;
+use pool::datatypes::PoolLinkedHashMap;
 use rayon::{ThreadPool, ThreadPoolBuilder};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use serenity::all::{
-    Context, CreateAttachment, CreateCommand, CreateInteractionResponse,
+    Context, CreateAttachment, CreateCommand, CreateCommandOption, CreateInteractionResponse,
     CreateInteractionResponseMessage, EventHandler, GatewayIntents, GuildId, Interaction, Mention,
     Ready, StandardFramework,
 };
 use sound::sound::SoundManager;
 use sound_backend::sound_backend::SoundBackend;
 use std::{
-    cell::RefCell, io::Cursor, net::SocketAddr, ptr::addr_of_mut, rc::Rc, sync::Arc, time::Duration,
+    cell::RefCell,
+    collections::HashMap,
+    io::Cursor,
+    net::SocketAddr,
+    path::PathBuf,
+    rc::Rc,
+    sync::{Arc, LazyLock},
+    time::Duration,
 };
 use tokio::sync::{
     oneshot::{self, Sender},
     Mutex,
 };
 use tokio_util::io::ReaderStream;
+use ui_base::{
+    font_data::{UiFontData, UiFontDataLoading},
+    ui::UiCreator,
+};
+use urlencoding::encode;
 
-static mut CLIENT: Option<Mutex<*mut Client>> = None;
+pub struct ClientWrapper(Client);
+
+unsafe impl Sync for ClientWrapper {}
+unsafe impl Send for ClientWrapper {}
+
+static CLIENT: Mutex<Option<ClientWrapper>> = Mutex::const_new(None);
+static HTTP: LazyLock<Arc<reqwest::Client>> = LazyLock::new(Default::default);
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Skin {
+    #[serde(rename = "skin_name")]
+    name: String,
+    #[serde(alias = "skin_color_body")]
+    color_body: Option<i32>,
+    #[serde(alias = "skin_color_feet")]
+    color_feet: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ServerClient {
+    name: String,
+    skin: Skin,
+}
+
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Server {
+    #[serde_as(as = "serde_with::VecSkipError<_>")]
+    clients: Vec<ServerClient>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ServerWrapper {
+    info: Server,
+}
+
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Wrapper {
+    #[serde_as(as = "serde_with::VecSkipError<_>")]
+    servers: Vec<ServerWrapper>,
+}
+
+type PlayerList = Arc<parking_lot::Mutex<(HashMap<String, Skin>, std::time::Instant)>>;
+static PLAYERS: LazyLock<PlayerList> = LazyLock::new(|| {
+    Arc::new(parking_lot::Mutex::new((
+        Default::default(),
+        std::time::Instant::now() - Duration::from_secs(60 * 60 * 60),
+    )))
+});
 
 #[derive(Debug, Default, Deserialize)]
 struct RenderParams {
     skin_name: String,
+    player_name: Option<String>,
     zoom: Option<f32>,
     x: Option<f32>,
     y: Option<f32>,
@@ -96,17 +174,20 @@ fn config_dbg() -> ConfigDebug {
 struct Client {
     graphics_backend: Rc<GraphicsBackend>,
     graphics: Graphics,
-    sound: SoundManager,
+
     tee_renderer: RenderTee,
+    nameplate_renderer: NameplateRender,
+    emoticon_renderer: RenderEmoticon,
+    toolkit_renderer: ToolkitRender,
+
     skin_container: SkinContainer,
     entities_container: EntitiesContainer,
-    io: Io,
-    thread_pool: Arc<rayon::ThreadPool>,
+    weapon_container: WeaponContainer,
+    emoticon_container: EmoticonsContainer,
+
     sys: System,
     client_map: ClientMapRender,
-    client_map_pkm: ClientMapRender,
     skin_names: Vec<String>,
-    did_tick: bool,
 }
 
 impl Client {
@@ -117,17 +198,8 @@ impl Client {
         center_y: f32,
         zoom: f32,
     ) {
-        let points: [f32; 4] = RenderTools::map_canvas_to_world(
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            center_x,
-            center_y,
-            graphics.canvas_handle.canvas_aspect(),
-            zoom,
-        );
-        state.map_canvas(points[0], points[1], points[2], points[3]);
+        CanvasMappingIngame::new(graphics)
+            .map_canvas_for_ingame_items(state, center_x, center_y, zoom);
     }
 
     pub fn render(&mut self, params: RenderParams, sender: Sender<anyhow::Result<Vec<u8>>>) {
@@ -199,11 +271,7 @@ impl Client {
             _ => TeeEye::Normal,
         };
 
-        let map_file = if is_ctf1 {
-            &mut self.client_map
-        } else {
-            &mut self.client_map_pkm
-        };
+        let map_file = &mut self.client_map;
         let map = map_file.continue_loading(&Default::default());
         let default_key = self.entities_container.default_key.clone();
         if let Some(map) = map {
@@ -211,8 +279,8 @@ impl Client {
                 &map.data.buffered_map.map_visual,
                 &map.data.buffered_map,
                 &Default::default(),
-                &Duration::ZERO,
-                &Duration::ZERO,
+                &self.sys.time_get_nanoseconds(),
+                &self.sys.time_get_nanoseconds(),
                 &Camera {
                     pos: vec2::new(x, y),
                     zoom,
@@ -231,13 +299,46 @@ impl Client {
             let skin_name: Option<NetworkResourceKey<24>> = skin_name.as_str().try_into().ok();
             let skin = self.skin_container.get_or_default_opt(skin_name.as_ref());
 
+            let weapon = self.weapon_container.default_key.clone();
+            let weapons = self.weapon_container.get_or_default(&weapon);
+            self.toolkit_renderer.render_weapon_for_player(
+                weapons,
+                &CharacterRenderInfo {
+                    lerped_pos: Default::default(),
+                    lerped_vel: Default::default(),
+                    lerped_hook_pos: Default::default(),
+                    has_air_jump: Default::default(),
+                    cursor_pos: Default::default(),
+                    move_dir: Default::default(),
+                    cur_weapon: WeaponType::Hammer,
+                    recoil_ticks_passed: Default::default(),
+                    left_eye: Default::default(),
+                    right_eye: Default::default(),
+                    buffs: PoolLinkedHashMap::new_without_pool(),
+                    debuffs: PoolLinkedHashMap::new_without_pool(),
+                    animation_ticks_passed: Default::default(),
+                    game_ticks_passed: Default::default(),
+                    game_round_ticks: Default::default(),
+                    emoticon: Default::default(),
+                },
+                Default::default(),
+                50.try_into().unwrap(),
+                &GameTimeInfo {
+                    ticks_per_second: 50.try_into().unwrap(),
+                    intra_tick_time: Duration::ZERO,
+                },
+                state,
+                false,
+                false,
+            );
+
             let color_body = if !custom_color {
                 TeeRenderSkinColor::Original
             } else {
                 let _a = ((color_body >> 24) & 0xFF) as f64 / 255.0;
                 let h = ((color_body >> 16) & 0xFF) as f64 / 255.0;
                 let s = ((color_body >> 8) & 0xFF) as f64 / 255.0;
-                let l = ((color_body >> 0) & 0xFF) as f64 / 255.0;
+                let l = ((color_body) & 0xFF) as f64 / 255.0;
                 let mut hsl = palette::Hsl::new_const((h * 360.0).into(), s, l);
                 let darkest = 0.5;
                 hsl.lightness = darkest + hsl.lightness * (1.0 - darkest);
@@ -257,7 +358,7 @@ impl Client {
                 let _a = ((color_feet >> 24) & 0xFF) as f64 / 255.0;
                 let h = ((color_feet >> 16) & 0xFF) as f64 / 255.0;
                 let s = ((color_feet >> 8) & 0xFF) as f64 / 255.0;
-                let l = ((color_feet >> 0) & 0xFF) as f64 / 255.0;
+                let l = ((color_feet) & 0xFF) as f64 / 255.0;
                 let mut hsl = palette::Hsl::new_const((h * 360.0).into(), s, l);
                 let darkest = 0.5;
                 hsl.lightness = darkest + hsl.lightness * (1.0 - darkest);
@@ -272,13 +373,13 @@ impl Client {
             };
 
             let tee_render_info = TeeRenderInfo {
-                eye_left: TeeEye::Happy,
-                eye_right: TeeEye::Happy,
+                eye_left: tee_eyes,
+                eye_right: tee_eyes,
                 color_body,
                 color_feet,
                 got_air_jump: true,
                 feet_flipped: false,
-                size: 2.0 / zoom,
+                size: 2.0,
             };
 
             self.tee_renderer.render_tee(
@@ -294,6 +395,32 @@ impl Client {
                 1.0,
                 &state,
             );
+
+            let emoticon_key = self.emoticon_container.default_key.clone();
+            self.emoticon_renderer.render(&mut RenderEmoticonPipe {
+                emoticon_container: &mut self.emoticon_container,
+                pos: vec2::new(0.0, 0.0),
+                state: &state,
+                emoticon_key: Some(&emoticon_key),
+                emoticon: EmoticonType::HEARTS,
+                emoticon_ticks: 90,
+                intra_tick_time: Duration::ZERO,
+                ticks_per_second: 50.try_into().unwrap(),
+            });
+
+            let name = if let Some(name) = &params.player_name {
+                name.clone()
+            } else {
+                "".to_string()
+            };
+
+            self.nameplate_renderer.render(&mut NameplateRenderPipe {
+                cur_time: &self.sys.time_get_nanoseconds(),
+                name: &name,
+                state: &state,
+                pos: &vec2::new(0.0, 0.0),
+                camera_zoom: zoom.clamp(0.3, f32::MAX),
+            });
 
             map.render.render_foreground(&mut RenderPipeline::new(
                 &map.data.buffered_map.map_visual,
@@ -336,17 +463,14 @@ impl Client {
         // then prepare components allocations etc.
         let tp = loading.tp.clone();
 
-        let config_gl = config_gl();
         let (backend_base, streamed_data) = GraphicsBackendBase::new(
             loading.backend_loading_io,
             loading.backend_loading,
             &tp,
             BackendWindow::Headless {
-                width: 800,
-                height: 600,
+                width: 300,
+                height: 200,
             },
-            &config_dbg(),
-            &config_gl,
         )?;
 
         let window_props = backend_base.get_window_props();
@@ -354,6 +478,13 @@ impl Client {
         let graphics = Graphics::new(graphics_backend.clone(), streamed_data, window_props);
 
         let tee_renderer = RenderTee::new(&graphics);
+        let mut creator = UiCreator::default();
+        let font_loading = UiFontDataLoading::new(&loading.io);
+        let font_data = UiFontData::new(font_loading)?;
+        creator.load_font(&font_data);
+        let nameplate_renderer = NameplateRender::new(&graphics, &creator);
+        let emoticon_renderer = RenderEmoticon::new(&graphics);
+        let toolkit_renderer = ToolkitRender::new(&graphics);
 
         let sound_backend = SoundBackend::new(&ConfigSound {
             backend: "None".to_string(),
@@ -388,9 +519,37 @@ impl Client {
             &scene,
             ENTITIES_CONTAINER_PATH.as_ref(),
         );
+        let default_emoticons =
+            EmoticonsContainer::load_default(&loading.io, EMOTICONS_CONTAINER_PATH.as_ref());
+        let emoticons_container = EmoticonsContainer::new(
+            loading.io.clone(),
+            tp.clone(),
+            default_emoticons,
+            None,
+            None,
+            "emoticon-container",
+            &graphics,
+            &sound,
+            &scene,
+            EMOTICONS_CONTAINER_PATH.as_ref(),
+        );
+        let default_weapons =
+            WeaponContainer::load_default(&loading.io, WEAPON_CONTAINER_PATH.as_ref());
+        let weapons_container = WeaponContainer::new(
+            loading.io.clone(),
+            tp.clone(),
+            default_weapons,
+            None,
+            None,
+            "weapons-container",
+            &graphics,
+            &sound,
+            &scene,
+            WEAPON_CONTAINER_PATH.as_ref(),
+        );
 
         let fs = loading.io.fs.clone();
-        let skin_names = loading
+        let skin_names: Vec<_> = loading
             .io
             .io_batcher
             .spawn(async move {
@@ -399,9 +558,22 @@ impl Client {
                 Ok(files)
             })
             .get_storage()
-            .unwrap();
+            .unwrap()
+            .into_iter()
+            .map(|(skin_name, ty)| {
+                let skin: PathBuf = skin_name.clone().into();
+                let skin = if matches!(ty, FileSystemEntryTy::File { .. }) {
+                    skin.file_stem()
+                        .and_then(|s| s.to_str().map(|s| s.to_string()))
+                        .unwrap_or_default()
+                } else {
+                    skin_name.clone()
+                };
+                skin
+            })
+            .collect();
 
-        skin_names.keys().for_each(|skin| {
+        skin_names.iter().for_each(|skin| {
             let key: Option<NetworkResourceKey<24>> = skin.as_str().try_into().ok();
             skins.get_or_default_opt(key.as_ref());
         });
@@ -425,25 +597,6 @@ impl Client {
             &Default::default(),
         ));
 
-        let fs = loading.io.fs.clone();
-        let pkm = loading
-            .io
-            .io_batcher
-            .spawn(async move { Ok(fs.read_file("map/maps/pkm.twmap".as_ref()).await?) })
-            .get_storage()
-            .unwrap();
-
-        let client_map_pkm = ClientMapRender::new(RenderMapLoading::new(
-            tp.clone(),
-            pkm,
-            None,
-            loading.io.clone(),
-            &sound,
-            Default::default(),
-            &graphics,
-            &Default::default(),
-        ));
-
         println!("finished setup");
 
         graphics.swap();
@@ -451,24 +604,25 @@ impl Client {
         Ok(Self {
             graphics_backend,
             graphics,
+
             tee_renderer,
+            emoticon_renderer,
+            nameplate_renderer,
+            toolkit_renderer,
+
             skin_container: skins,
             entities_container: entities,
-            io: loading.io,
-            thread_pool: tp,
+            emoticon_container: emoticons_container,
+            weapon_container: weapons_container,
+
             client_map,
-            client_map_pkm,
             sys: loading.sys,
-            skin_names: skin_names.into_keys().collect(),
-            did_tick: false,
-            sound,
+            skin_names,
         })
     }
 
-    fn run(&mut self) {
-        unsafe {
-            *addr_of_mut!(CLIENT) = Some(Mutex::new(self));
-        }
+    fn run(self) {
+        *CLIENT.blocking_lock() = Some(ClientWrapper(self));
 
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2) // should be at least 2
@@ -477,7 +631,7 @@ impl Client {
             .build()
             .unwrap();
         let _g = rt.enter();
-        rt.block_on(async_main_discord());
+        rt.block_on(async move { tokio::join!(async_main(), async_main_discord()) });
     }
 }
 
@@ -504,8 +658,9 @@ fn main() {
     let map_pipe = MapPipeline::new_boxed();
 
     let config_gl = config_gl();
+    let config_gfx = config_gfx();
     let loading = GraphicsBackendLoading::new(
-        &config_gfx(),
+        &config_gfx,
         &config_dbg(),
         &config_gl,
         graphics_backend::window::BackendRawDisplayHandle::Headless,
@@ -513,11 +668,11 @@ fn main() {
         io.clone().into(),
     )
     .unwrap();
-    let loading_io = GraphicsBackendIoLoading::new(&config_gfx(), &io.clone().into());
+    let loading_io = GraphicsBackendIoLoading::new(&config_gfx, &io.clone().into());
 
     let sys = System::new();
 
-    let mut client = Client::new(ClientLoad {
+    let client = Client::new(ClientLoad {
         backend_loading: loading,
         backend_loading_io: loading_io,
         sys,
@@ -532,7 +687,7 @@ async fn async_main() {
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
-        .route("/", get(root));
+        .route("/", get(generate_preview));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -556,6 +711,9 @@ impl EventHandler for Handler {
                     .parse()
                     .expect("GUILD_ID must be an integer"),
             );
+            if command.guild_id != Some(guild_id) {
+                return;
+            }
 
             let main_cmd_str = Mention::User(command.user.id).to_string()
                 + "\n\
@@ -566,25 +724,99 @@ impl EventHandler for Handler {
                 _ => None,
             };
 
-            if let Some(content) = content {
-                let params = RenderParams {
-                    skin_name: "greyfox".to_string(),
-                    zoom: Some(0.5),
-                    x: Some(17.0),
-                    y: Some(25.5),
-                    map_name: None,
-                    body: None,
-                    feet: None,
-                    dir_x: None,
-                    dir_y: None,
-                    eyes: None,
-                };
-                let (sender, receiver) = oneshot::channel();
-                tokio::task::spawn_blocking(|| render_global(params, sender))
-                    .await
-                    .unwrap();
+            let player_name = if let Some(arg) = command
+                .data
+                .options
+                .first()
+                .and_then(|arg| arg.value.as_str())
+            {
+                arg.to_string()
+            } else {
+                "".to_string()
+            };
+            /*let must_update = unsafe {
+                let mut g = PLAYERS.lock();
+                let (_, now) = &mut *g;
+                let must_update =
+                    std::time::Instant::now().duration_since(*now) > Duration::from_secs(20);
+                if must_update {
+                    *now = std::time::Instant::now();
+                }
+                must_update
+            };
 
-                let img = receiver.await.unwrap().unwrap();
+            if must_update {
+                log::info!("updating player list");
+                unsafe {
+                    match HTTP
+                        .download_text(
+                            "https://master1.ddnet.org/ddnet/15/servers.json"
+                                .try_into()
+                                .unwrap(),
+                        )
+                        .await
+                        .map_err(|err| anyhow!(err))
+                        .and_then(|s| {
+                            serde_json::from_str::<Wrapper>(&s).map_err(|err| anyhow!(err))
+                        }) {
+                        Ok(wrapper) => {
+                            let players = wrapper
+                                .servers
+                                .into_iter()
+                                .flat_map(|server| {
+                                    server
+                                        .info
+                                        .clients
+                                        .into_iter()
+                                        .map(|client| (client.name, client.skin))
+                                })
+                                .collect::<HashMap<_, _>>();
+
+                            PLAYERS.lock().0 = players;
+                        }
+                        Err(err) => {
+                            log::error!("{err}");
+                        }
+                    }
+                }
+            }
+
+            let player = unsafe {
+                let g = PLAYERS.lock();
+                let (players, _) = &*g;
+                players
+                    .get(&player_name)
+                    .cloned()
+                    .map(|s| (player_name.clone(), s))
+            }*/
+
+            if let Some(content) = content {
+                let img = match HTTP
+                    .get(
+                        format!(
+                            "http://localhost:3002/?player_name={}\
+                                &skin_name=default\
+                                &zoom=0.25\
+                                &x=17.0\
+                                &y=25.5\
+                                &eyes=happy",
+                            encode(&player_name)
+                        )
+                        .as_str(),
+                    )
+                    .send()
+                    .await
+                {
+                    Ok(skin) => {
+                        let Ok(skin) = skin.bytes().await else {
+                            return;
+                        };
+                        skin
+                    }
+                    Err(_) => {
+                        return;
+                    }
+                };
 
                 let data = CreateInteractionResponseMessage::new()
                     .content(content)
@@ -610,6 +842,11 @@ impl EventHandler for Handler {
 
         let skin_cmd = CreateCommand::new("skin")
             .description("Create a preview of that skin")
+            .add_option(CreateCommandOption::new(
+                serenity::all::CommandOptionType::String,
+                "player_name",
+                "Name of the player to render",
+            ))
             .dm_permission(false);
 
         if (guild_id.set_commands(&ctx.http, vec![skin_cmd]).await).is_err() {
@@ -620,18 +857,6 @@ impl EventHandler for Handler {
 
 async fn async_main_discord() {
     let framework = StandardFramework::new();
-
-    /*
-    for ez debugging
-    env::set_var("GUILD_ID", "");
-    env::set_var("ROLE_ID", "");
-    env::set_var(
-        "DISCORD_TOKEN",
-        "",
-    );
-    env::set_var("USERNAME", "");
-    env::set_var("PASSWORD", "");
-    */
 
     dotenvy::dotenv().ok();
 
@@ -651,13 +876,55 @@ async fn async_main_discord() {
 }
 
 fn render_global(params: RenderParams, sender: Sender<anyhow::Result<Vec<u8>>>) {
-    unsafe { (**CLIENT.as_mut().unwrap().blocking_lock()).render(params, sender) }
+    CLIENT
+        .blocking_lock()
+        .as_mut()
+        .unwrap()
+        .0
+        .render(params, sender)
 }
 
-// basic handler that responds with a static string
-async fn root(params: Option<Query<RenderParams>>) -> impl IntoResponse {
-    if let Some(params) = params {
-        let params = params.0;
+async fn generate_preview(params: Option<Query<RenderParams>>) -> impl IntoResponse {
+    if let Some(Query(mut params)) = params {
+        let can_update = {
+            let mut g = PLAYERS.lock();
+            let (_, now) = &mut *g;
+            let can_update =
+                std::time::Instant::now().duration_since(*now) > Duration::from_millis(500);
+            if can_update {
+                *now = std::time::Instant::now();
+            } else {
+                return "Rate limited".into_response();
+            }
+            can_update
+        };
+
+        if can_update && params.player_name.is_some() {
+            if let Ok(skin) = HTTP
+                .get(
+                    format!(
+                        "https://ddstats.tw/profile/json?player={}",
+                        encode(params.player_name.as_ref().unwrap())
+                    )
+                    .as_str(),
+                )
+                .send()
+                .await
+            {
+                if let Ok(skin) = skin
+                    .text()
+                    .await
+                    .map_err(|err| anyhow!(err))
+                    .and_then(|s| serde_json::from_str::<Skin>(&s).map_err(|err| anyhow!(err)))
+                {
+                    params.player_name = params.player_name.clone();
+                    params.skin_name = skin.name;
+                    params.body = skin.color_body;
+                    params.feet = skin.color_feet;
+                }
+            }
+        };
+
         let (sender, receiver) = oneshot::channel();
         tokio::task::spawn_blocking(|| render_global(params, sender))
             .await
@@ -669,14 +936,7 @@ async fn root(params: Option<Query<RenderParams>>) -> impl IntoResponse {
         let stream = ReaderStream::new(cursor);
         // convert the `Stream` into an `axum::body::HttpBody`
         let body = StreamBody::new(stream);
-        let headers = [
-            (header::CONTENT_TYPE, "image/png; charset=utf-8"),
-            /*(
-                header::CONTENT_DISPOSITION,
-                "attachment; filename=\"img.png\"",
-            ),*/
-        ];
-
+        let headers = [(header::CONTENT_TYPE, "image/png; charset=utf-8")];
         (headers, body).into_response()
     } else {
         format!(

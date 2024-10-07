@@ -236,7 +236,7 @@ dependencies = [
 [[package]]
 name = "api-wasm-macros"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -515,7 +515,7 @@ dependencies = [
 [[package]]
 name = "base"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "ascii",
@@ -533,7 +533,7 @@ dependencies = [
 [[package]]
 name = "base-fs"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -552,7 +552,7 @@ dependencies = [
 [[package]]
 name = "base-http"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -570,7 +570,7 @@ dependencies = [
 [[package]]
 name = "base-io"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-executor",
@@ -584,7 +584,7 @@ dependencies = [
 [[package]]
 name = "base-io-traits"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -629,7 +629,7 @@ checksum = "3a8241f3ebb85c056b509d4327ad0358fbbba6ffb340bf388f26350aeda225b1"
 [[package]]
 name = "bin-patch"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "zstd",
@@ -849,7 +849,7 @@ dependencies = [
 [[package]]
 name = "cache"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -1007,7 +1007,7 @@ dependencies = [
 [[package]]
 name = "client-containers"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.6",
@@ -1039,7 +1039,7 @@ dependencies = [
 [[package]]
 name = "client-extra"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
 ]
@@ -1047,7 +1047,7 @@ dependencies = [
 [[package]]
 name = "client-map"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -1071,7 +1071,7 @@ dependencies = [
 [[package]]
 name = "client-render"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "client-containers",
  "client-render-base",
@@ -1091,7 +1091,7 @@ dependencies = [
 [[package]]
 name = "client-render-base"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1121,7 +1121,7 @@ dependencies = [
 [[package]]
 name = "client-render-game"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -1158,7 +1158,7 @@ dependencies = [
 [[package]]
 name = "client-types"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "command-parser",
@@ -1172,7 +1172,7 @@ dependencies = [
 [[package]]
 name = "client-ui"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1272,7 +1272,7 @@ dependencies = [
 [[package]]
 name = "command-parser"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "hiarc",
@@ -1306,7 +1306,7 @@ dependencies = [
 [[package]]
 name = "config"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "atomic_enum",
@@ -1323,7 +1323,7 @@ dependencies = [
 [[package]]
 name = "config-macro"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1752,7 +1752,7 @@ checksum = "d79237cd097ee4edc03bf18219af985d881027e0a06bdac67c72d5171a52006b"
 [[package]]
 name = "demo"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -1933,7 +1933,7 @@ dependencies = [
 [[package]]
 name = "editor"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2004,7 +2004,7 @@ dependencies = [
 [[package]]
 name = "egui-timeline"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "egui",
  "egui_extras",
@@ -2491,7 +2491,7 @@ dependencies = [
 [[package]]
 name = "game-config"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "config",
@@ -2503,7 +2503,7 @@ dependencies = [
 [[package]]
 name = "game-database"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2516,7 +2516,7 @@ dependencies = [
 [[package]]
 name = "game-database-macros"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2526,7 +2526,7 @@ dependencies = [
 [[package]]
 name = "game-interface"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "ascii",
  "base",
@@ -2621,7 +2621,7 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 [[package]]
 name = "graphics"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "graphics-backend-traits",
@@ -2637,7 +2637,7 @@ dependencies = [
 [[package]]
 name = "graphics-backend"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2680,7 +2680,7 @@ dependencies = [
 [[package]]
 name = "graphics-backend-traits"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "bitflags 2.6.0",
@@ -2694,7 +2694,7 @@ dependencies = [
 [[package]]
 name = "graphics-base-traits"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2707,7 +2707,7 @@ dependencies = [
 [[package]]
 name = "graphics-types"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "bincode",
  "bitflags 2.6.0",
@@ -2840,7 +2840,7 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 [[package]]
 name = "hiarc"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2864,7 +2864,7 @@ dependencies = [
 [[package]]
 name = "hiarc-macro"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3082,7 +3082,7 @@ dependencies = [
 [[package]]
 name = "image"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "png",
@@ -3444,7 +3444,7 @@ dependencies = [
 [[package]]
 name = "map"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -3464,7 +3464,7 @@ dependencies = [
 [[package]]
 name = "map-convert-lib"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -3481,7 +3481,7 @@ dependencies = [
 [[package]]
 name = "master-server-types"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "arrayvec 0.5.2",
  "csv",
@@ -3502,7 +3502,7 @@ checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 [[package]]
 name = "math"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "fixed",
  "hiarc",
@@ -3696,7 +3696,7 @@ dependencies = [
 [[package]]
 name = "native"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -3787,7 +3787,7 @@ dependencies = [
 [[package]]
 name = "network"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4605,7 +4605,7 @@ checksum = "22686f4785f02a4fcc856d3b3bb19bf6c8160d103f7a99cc258bddd0251dc7f2"
 [[package]]
 name = "pool"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "bincode",
  "hashlink",
@@ -5652,7 +5652,7 @@ dependencies = [
 [[package]]
 name = "shared"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "api-wasm-macros",
@@ -5690,7 +5690,7 @@ dependencies = [
 [[package]]
 name = "shared-base"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -5726,7 +5726,7 @@ dependencies = [
 [[package]]
 name = "shared-game"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -5896,7 +5896,7 @@ dependencies = [
 [[package]]
 name = "sound"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "hiarc",
@@ -5908,7 +5908,7 @@ dependencies = [
 [[package]]
 name = "sound-backend"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base",
@@ -6229,6 +6229,7 @@ dependencies = [
  "base-fs",
  "base-http",
  "base-io",
+ "base-io-traits",
  "client-containers",
  "client-map",
  "client-render",
@@ -6244,12 +6245,17 @@ dependencies = [
  "graphics-backend-traits",
  "graphics-base-traits",
  "graphics-types",
+ "log",
  "math",
  "native",
  "palette",
  "parking_lot",
+ "pool",
  "rayon",
+ "reqwest 0.12.8",
  "serde",
+ "serde_json",
+ "serde_with",
  "serenity",
  "shared-game",
  "sound",
@@ -6257,6 +6263,8 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+ "ui-base",
+ "urlencoding",
  "winit 0.29.0-beta.0",
 ]
 
@@ -6679,7 +6687,7 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 [[package]]
 name = "ui-base"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "base-io",
@@ -6695,7 +6703,7 @@ dependencies = [
 [[package]]
 name = "ui-traits"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "egui",
  "ui-base",
@@ -6778,6 +6786,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf-8"
@@ -6955,7 +6969,7 @@ checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
 [[package]]
 name = "wasm-logic-db"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "base-io",
  "game-database",
@@ -6966,7 +6980,7 @@ dependencies = [
 [[package]]
 name = "wasm-logic-fs"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "base-io",
  "base-io-traits",
@@ -6977,7 +6991,7 @@ dependencies = [
 [[package]]
 name = "wasm-logic-graphics"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "graphics",
  "graphics-backend",
@@ -6991,7 +7005,7 @@ dependencies = [
 [[package]]
 name = "wasm-logic-http"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "base",
  "base-io",
@@ -7005,7 +7019,7 @@ dependencies = [
 [[package]]
 name = "wasm-logic-sound"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "hashlink",
@@ -7018,7 +7032,7 @@ dependencies = [
 [[package]]
 name = "wasm-runtime"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.6",
@@ -7031,7 +7045,7 @@ dependencies = [
 [[package]]
 name = "wasm-runtime-types"
 version = "0.1.0"
-source = "git+https://github.com/Jupeyy/dd-pg.git?rev=d7a06b399189f74d7f87cb4e3038346b4533291e#d7a06b399189f74d7f87cb4e3038346b4533291e"
+source = "git+file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/?rev=012bcd36f#012bcd36f9938e92979d1e52eb270f82e6103693"
 dependencies = [
  "bincode",
  "serde",

@@ -7,28 +7,31 @@ edition = "2021"
 git-fetch-with-cli = true
 
 [dependencies]
-game-interface = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-shared-game = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-client-render-base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-client-render-game = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-client-render = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-client-map = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-client-containers = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-native = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-graphics = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-graphics-base-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-graphics-backend = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-graphics-backend-traits = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-graphics-types = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-base = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-base-io = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-base-fs = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-base-http = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-config = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-game-config = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-math = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-sound = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
-sound-backend = { git = "https://github.com/Jupeyy/dd-pg.git", rev = "d7a06b399189f74d7f87cb4e3038346b4533291e" }
+game-interface = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+shared-game = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+client-render-base = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+client-render-game = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+client-render = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+client-map = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+client-containers = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+native = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+graphics = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+graphics-base-traits = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+graphics-backend = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+graphics-backend-traits = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+graphics-types = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+base = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+base-io = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+base-io-traits = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+base-fs = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+base-http = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+config = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+game-config = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+math = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+pool = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+ui-base = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+sound = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
+sound-backend = { git = "file:///home/jupeyy/Schreibtisch/Teeworlds/DDNet/ddnet_jupeyy2/", rev = "012bcd36f" }
 
 axum = { version = "0.6.20", features = ["headers"] }
 serde = "1.0.188"
@@ -42,5 +45,10 @@ anyhow = { version = "1.0.86", features = ["backtrace"] }
 env_logger = "0.11.5"
 parking_lot = "0.12.3"
 dotenvy = "0.15.7"
+serde_json = "1.0.125"
+reqwest = { version = "0.12.5", default-features = false, features = ["rustls-tls"] }
+serde_with = "3.9.0"
+log = "0.4.22"
+urlencoding = "2.1.3"
 
 serenity = { git = "https://github.com/serenity-rs/serenity", rev = "2bb56baf63d8f65246f075f1922d2d0571ae0cb5" }
