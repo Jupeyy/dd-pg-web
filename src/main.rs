@@ -301,7 +301,7 @@ impl Client {
         });
 
         let map_file = &mut self.client_map;
-        let map = map_file.continue_loading(&Default::default());
+        let map = map_file.try_get();
         let default_key = self.entities_container.default_key.clone();
         if let Some(map) = map {
             map.render.render_background(&mut RenderPipeline::new(
@@ -655,7 +655,7 @@ impl Client {
             .get_storage()
             .unwrap();
 
-        let client_map = ClientMapRender::new(RenderMapLoading::new(
+        let mut client_map = ClientMapRender::new(RenderMapLoading::new(
             tp.clone(),
             ctf1,
             None,
@@ -665,6 +665,11 @@ impl Client {
             &graphics,
             &Default::default(),
         ));
+
+        while client_map.continue_loading(&Default::default()).is_none() {
+            std::thread::sleep(Duration::from_millis(10));
+            std::thread::yield_now();
+        }
 
         println!("finished setup");
 
