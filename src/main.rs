@@ -824,6 +824,7 @@ impl EventHandler for Handler {
                                 &y=25.5\
                                 &weapon=hammer\
                                 &emoticon=hearts\
+                                &use_player_api=true\
                                 &eyes=happy",
                             encode(&player_name)
                         )
