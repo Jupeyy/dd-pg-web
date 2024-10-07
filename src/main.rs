@@ -144,6 +144,8 @@ struct RenderParams {
     hook_x: Option<f32>,
     /// The y position of the hook relative to the Tee
     hook_y: Option<f32>,
+    /// The current time of the rendering (e.g. for map animations) in ms.
+    time: Option<u64>,
 
     /// Name of the map to render
     map_name: Option<String>,
@@ -301,6 +303,9 @@ impl Client {
             })
         });
 
+        // at most 1 years
+        let cur_time = Duration::from_millis(params.time.unwrap_or_default().clamp(0, 31536000000));
+
         let map_file = &mut self.client_map;
         let map = map_file.try_get();
         let default_key = self.entities_container.default_key.clone();
@@ -309,8 +314,8 @@ impl Client {
                 &map.data.buffered_map.map_visual,
                 &map.data.buffered_map,
                 &Default::default(),
-                &self.sys.time_get_nanoseconds(),
-                &self.sys.time_get_nanoseconds(),
+                &cur_time,
+                &cur_time,
                 &Camera {
                     pos: vec2::new(x, y),
                     zoom,
@@ -493,8 +498,8 @@ impl Client {
                 &map.data.buffered_map.map_visual,
                 &map.data.buffered_map,
                 &Default::default(),
-                &Duration::ZERO,
-                &Duration::ZERO,
+                &cur_time,
+                &cur_time,
                 &Camera {
                     pos: vec2::new(x, y),
                     zoom,
